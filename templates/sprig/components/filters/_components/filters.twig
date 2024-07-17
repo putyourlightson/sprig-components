@@ -1,0 +1,262 @@
+{# Sets default values. #}
+{% set season = season ?? '' %}
+{% set year = year ?? '' %}
+{% set styles = styles ?? [] %}
+{% set colours = colours ?? [] %}
+{% set prices = prices ?? [] %}
+{% set explain = explain ?? 0 %}
+
+{% if reset is defined %}
+    {% set season = '' %}
+    {% set year = '' %}
+    {% set styles = [] %}
+    {% set colours = [] %}
+    {% set prices = [] %}
+    {% set explain = 0 %}
+{% endif %}
+
+{# Get options from field (https://craftcms.com/docs/3.x/dropdown-fields.html#saving-dropdown-fields). #}
+{% set seasonOptions = craft.app.fields.getFieldByHandle('season').options %}
+
+{# Create options from a range (https://twig.symfony.com/doc/3.x/functions/range.html). #}
+{% set yearOptions = 2021..2018 %}
+
+{# Get options from category groups. #}
+{% set styleOptions = craft.categories.group('styles').all() %}
+{% set colourOptions = craft.categories.group('colours').all() %}
+
+{# Create custom options with conditions. #}
+{% set priceOptions = [
+    {
+        label: '$1 - $10',
+        condition: ['and', 'defaultPrice >= 1', 'defaultPrice <= 10'],
+    },
+    {
+        label: '$11 - $30',
+        condition: ['and', 'defaultPrice >= 11', 'defaultPrice <= 30'],
+    },
+    {
+        label: '$31 - $50',
+        condition: ['and', 'defaultPrice >= 31', 'defaultPrice <= 50'],
+    },
+    {
+        label: '> $50',
+        condition: ['and', 'defaultPrice > 50'],
+    },
+] %}
+
+{# Generate a product query, eager-loading relationship fields. #}
+{# https://craftcms.com/docs/3.x/element-queries.html #}
+{% set productQuery = craft.products.with(['image', 'styles', 'colours']) %}
+
+{% if season %}
+    {# https://craftcms.com/docs/3.x/dropdown-fields.html#querying-elements-with-dropdown-fields #}
+    {% do productQuery.season(season) %}
+{% endif %}
+
+{% if year %}
+    {# https://craftcms.com/docs/3.x/date-time-fields.html#querying-elements-with-date-fields #}
+    {% do productQuery.releaseDate(['and', '>= ' ~ year ~ '-01-01', '<= ' ~ year ~ '-12-31']) %}
+{% endif %}
+
+{% if styles is not empty %}
+    {# https://craftcms.com/docs/3.x/relations.html#the-andrelatedto-parameter #}
+    {% do productQuery.andRelatedTo(styles) %}
+{% endif %}
+
+{% if colours is not empty %}
+    {# https://craftcms.com/docs/3.x/relations.html#the-andrelatedto-parameter #}
+    {% do productQuery.andRelatedTo(colours) %}
+{% endif %}
+
+{% set priceConditions = ['or'] %}
+{% for price in prices %}
+    {% if priceOptions[price] is defined %}
+        {# https://craftcms.com/docs/3.x/dev/filters.html#push #}
+        {% set priceConditions = priceConditions|push(priceOptions[price].condition) %}
+    {% endif %}
+{% endfor %}
+{# https://craftcms.com/docs/3.x/element-queries.html#advanced-element-queries #}
+{% do productQuery.andWhere(priceConditions) %}
+
+{# Get products from query. #}
+{% set products = productQuery.all() %}
+
+<div class="flex overflow-hidden">
+    <div class="flex-1 overflow-auto focus:outline-none" tabindex="0">
+        <main class="flex-1 relative pb-8 z-0 overflow-y-auto">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+                <div class="space-y-2">
+                    <h2 class="text-lg leading-6 font-medium text-cool-gray-900">
+                        Product Filters
+                        <a href="" sprig s-val:reset="1" title="Reset">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </a>
+                        {% if currentUser and currentUser.admin %}
+                            <a href="" sprig s-val:explain="{{ explain ? 0 : 1 }}" title="Explain" class="float-right">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </a>
+                        {% endif %}
+                    </h2>
+                    <div class="grid gap-3 sm:grid-cols-4">
+                        <div class="bg-white overflow-hidden shadow rounded-lg px-4 py-3">
+                            <div class="text-md leading-7 font-medium text-cool-gray-900">
+                                Season
+                            </div>
+                            <div class="max-w-lg rounded-md shadow-sm sm:max-w-xs">
+                                <select sprig id="section" name="season" value="{{ season }}" class="block form-select w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                    <option value="">Any</option>
+                                    {% for seasonOption in seasonOptions %}
+                                        <option value="{{ seasonOption.value }}" {{ season == seasonOption.value ? 'selected' }}>
+                                            {{ seasonOption.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="max-w-lg rounded-md shadow-sm sm:max-w-xs mt-2">
+                                <select sprig id="section" name="year" value="{{ year }}" class="block form-select w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                    <option value="">Any</option>
+                                    {% for yearOption in yearOptions %}
+                                        <option value="{{ yearOption }}" {{ year == yearOption ? 'selected' }}>
+                                            {{ yearOption }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="bg-white overflow-hidden shadow rounded-lg px-4 py-3">
+                            <div class="text-md leading-7 font-medium text-cool-gray-900">
+                                Styles
+                            </div>
+                            {% for styleOption in styleOptions %}
+                                <div class="flex items-center">
+                                    <input sprig type="checkbox" id="styles-{{ styleOption.id }}" name="styles[]" value="{{ styleOption.id }}" {{ styleOption.id in styles ? 'checked' }}>
+                                    <label for="styles-{{ styleOption.id }}" class="text-sm leading-5 font-medium text-cool-gray-500 truncate ml-1">
+                                        {{ styleOption.title }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="bg-white overflow-hidden shadow rounded-lg px-4 py-3">
+                            <div class="text-md leading-7 font-medium text-cool-gray-900">
+                                Colours
+                            </div>
+                            {% for colourOption in colourOptions %}
+                                <div class="flex items-center">
+                                    <input sprig type="checkbox" id="colours-{{ colourOption.id }}" name="colours[]" value="{{ colourOption.id }}" {{ colourOption.id in colours ? 'checked' }}>
+                                    <label for="colours-{{ colourOption.id }}" class="text-sm leading-5 font-medium text-cool-gray-500 truncate ml-1">
+                                        {{ colourOption.title }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="bg-white overflow-hidden shadow rounded-lg px-4 py-3">
+                            <div class="text-md leading-7 font-medium text-cool-gray-900">
+                                Prices
+                            </div>
+                            {% for key, priceOption in priceOptions %}
+                                <div class="flex items-center">
+                                    <input sprig type="checkbox" id="price-{{ key }}" name="prices[]" value="{{ key }}" {{ key in prices ? 'checked' }}>
+                                    <label for="price-{{ key }}" class="text-sm leading-5 font-medium text-cool-gray-500 truncate ml-1">
+                                        {{ priceOption.label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if currentUser and currentUser.admin and explain %}
+                    <div class="text-md font-mono leading-7 font-medium text-red-700">
+                        {{ productQuery.getRawSql() }}
+                    </div>
+                {% endif %}
+
+                <div class="overflow-x-auto sm:-mx-6 lg:-mx-8">
+                    <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                            Product
+                                        </th>
+                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                            Season
+                                        </th>
+                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                            Styles
+                                        </th>
+                                        <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                            Colours
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for product in products %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-no-wrap">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="flex-shrink-0">
+                                                        {% set image = product.image[0] ?? null %}
+                                                        {% if image %}
+                                                            <img src="{{ image.getUrl('thumb') }}" alt="{{ product.title }}" class="h-10 w-10 block rounded-full">
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="text-sm leading-5">
+                                                        <div class="font-medium text-gray-900">
+                                                            {{ product.title }}
+                                                        </div>
+                                                        <div class="text-gray-500">
+                                                            {{ product.defaultPriceAsCurrency }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-3 whitespace-no-wrap">
+                                                <div class="text-sm leading-5 text-gray-500">
+                                                    {{ product.season|capitalize }}
+                                                    {{ product.releaseDate|date('Y') }}
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-3 whitespace-no-wrap">
+                                                <div class="text-sm leading-5 text-gray-500">
+                                                    {% for style in product.styles %}
+                                                        {{ style.title }}
+                                                        {{- not loop.last ? ',' }}
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-3 whitespace-no-wrap">
+                                                <div class="text-sm leading-5 text-gray-500">
+                                                    {% for colour in product.colours %}
+                                                        {{ colour.title }}
+                                                        {{- not loop.last ? ',' }}
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    {% if products|length == 0 %}
+                                        <tr>
+                                            <td colspan="6" class="px-6 py-3 whitespace-no-wrap">
+                                                <div class="text-center text-lg leading-7 text-gray-700">
+                                                    No products found
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>

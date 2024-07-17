@@ -1,0 +1,71 @@
+{% set lastProductId = lastProductId ?? 0 %}
+{% set purchasableId = purchasableId ?? 0 %}
+
+{% set addedToCart = success is defined %}
+
+{% if addedToCart %}
+    {% set productQuery = craft.products.id(lastProductId) %}
+{% else %}
+    {% set productQuery = craft.products.id('not ' ~ lastProductId).orderBy('RAND()') %}
+{% endif %}
+{% do productQuery.with([
+    ['image', {
+        withTransforms: ['thumb'],
+    }],
+]) %}
+{% set product = productQuery.one() %}
+{% set variant = product.defaultVariant %}
+
+{% if addedToCart %}
+    <script>
+        // document.getElementById('cart').dispatchEvent(new Event('refresh'));
+        htmx.trigger('#cart', 'refresh');
+    </script>
+{% endif %}
+
+{{ hiddenInput('lastProductId', product.id) }}
+
+<div class="p-4">
+    <div class="flex items-center space-x-3">
+        <div class="flex-shrink-0">
+            {% set image = product.image.one() %}
+            {% if image %}
+                <img src="{{ image.getUrl('thumb') }}" alt="{{ product.title }}" class="h-10 w-10 block rounded-full">
+            {% endif %}
+        </div>
+        <div class="flex-1">
+            <dl>
+                <dt class="text-md leading-7 font-medium text-cool-gray-900">
+                    {{ product.title }}
+                </dt>
+                <dd>
+                    <div class="text-sm leading-5 font-medium text-cool-gray-500 truncate">
+                        {{ product.defaultPriceAsCurrency }}
+                    </div>
+                </dd>
+            </dl>
+        </div>
+    </div>
+</div>
+<div class="bg-cool-gray-50 px-5 py-3">
+    <div class="text-sm leading-5 flex justify-between">
+        <a sprig href="#" class="font-medium text-teal-600 hover:text-teal-900 transition ease-in-out duration-150">
+            <svg class="inline h-4 w-4 text-cool-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            Suggest another
+        </a>
+        <a sprig s-action="commerce/cart/update-cart" s-method="post" s-val:purchasable-id="{{ variant.id }}" href="#" class="font-medium text-teal-600 hover:text-teal-900 transition ease-in-out duration-150">
+            {% if addedToCart %}
+                <svg class="inline h-4 w-4 text-cool-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+            {% else %}
+                <svg class="inline h-4 w-4 text-cool-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            {% endif %}
+            Add to cart
+        </a>
+    </div>
+</div>

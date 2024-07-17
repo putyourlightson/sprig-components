@@ -1,0 +1,10 @@
+{# If the form action was a success. #}
+{% if success is defined and success %}
+
+    {% include 'sprig/components/form/_components/partials/success' %}
+
+{% else %}
+
+    {% include 'sprig/components/form/_components/partials/simple' %}
+
+{% endif %}

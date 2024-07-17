@@ -1,0 +1,84 @@
+{% set cart = craft.commerce.carts.cart %}
+
+<div class="flex flex-col">
+    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                Product
+                            </th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                Quantity
+                            </th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                Amount
+                            </th>
+                            <th class="px-6 py-3 bg-gray-50"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for lineItem in cart.lineItems %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-no-wrap">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex-shrink-0">
+                                            {% set image = lineItem.purchasable.product.image.one() %}
+                                            {% if image %}
+                                                <img src="{{ image.getUrl('thumb') }}" alt="{{ lineItem.purchasable.title }}" class="h-10 w-10 block rounded-full">
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-sm leading-5">
+                                            <div class="font-medium text-gray-900">
+                                                {{ lineItem.purchasable.title }}
+                                            </div>
+                                            <div class="text-gray-500">
+                                                {{ lineItem.priceAsCurrency }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500">
+                                    <div class="mt-1 relative rounded-md shadow-sm w-20">
+                                        <input sprig s-action="commerce/cart/update-cart" s-method="post" name="lineItems[{{ lineItem.id }}][qty]" value="{{ lineItem.qty }}" type="number" min="0" class="form-input w-20 sm:text-sm sm:leading-5">
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500">
+                                    {{ lineItem.totalAsCurrency }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-no-wrap text-right text-sm leading-5 font-medium">
+                                    {% set vals = {('lineItems[' ~ lineItem.id ~ '][remove]'): 1}|json_encode %}
+                                    <a sprig s-action="commerce/cart/update-cart" s-method="post" s-vals="{{ vals }}" s-confirm="Are you sure you want to remove this product from your cart?" href="#" class="text-red-600 hover:text-red-800">
+                                        Remove
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        {% if cart.lineItems|length == 0 %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-3 whitespace-no-wrap">
+                                    <div class="text-center text-lg leading-7 text-gray-700">
+                                        Your cart is empty
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-t text-sm leading-5 text-gray-900 border-cool-gray-200 sm:px-6">
+                    <div>
+                        Total Item{{ cart.totalQty != 1 ? 's' }}:
+                        <span class="font-medium">{{ cart.totalQty }}</span>
+                    </div>
+                    <div>
+                        Total Amount:
+                        <span class="font-medium">{{ cart.totalAsCurrency }}</span>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

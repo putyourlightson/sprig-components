@@ -1,0 +1,288 @@
+{# Set to a new entry if none came back from an action request #}
+{% set entry = entry ?? create('craft\\elements\\Entry') %}
+
+{% set sectionId = 8 %}
+
+{% set title = title ?? '' %}
+{% set employmentType = fields.employmentType ?? 'remote' %}
+{% set employmentLength = fields.employmentLength ?? 'contract' %}
+
+{% if title %}
+    {% set similarJobLimit = similarJobLimit ?? 3 %}
+    {% set similarJobQuery = craft.entries({
+        sectionId: sectionId,
+        search: 'title:' ~ title,
+        limit: similarJobLimit,
+    }) %}
+    {% set similarJobs = similarJobQuery.all() %}
+{% endif %}
+
+{{ hiddenInput('step', step) }}
+
+<form sprig s-action="entries/save-entry" s-method="post">
+    {{ hiddenInput('sectionId', sectionId) }}
+
+    {# Step 1 #}
+    <div class="{{ step != 1 ? 'hidden' }}">
+        <div class="mt-5 shadow sm:rounded-md sm:overflow-hidden">
+            <div class="px-4 py-5 bg-white sm:p-6 space-y-6">
+                <div>
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            {{ steps[1] }}
+                        </h3>
+                        <p class="mt-1 text-sm leading-5 text-gray-500">
+                            Provide candidates with details about the job opportunity.
+                        </p>
+                    </div>
+                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+
+                        <div class="sm:col-span-6">
+                            <label for="title" class="block text-sm font-medium leading-5 text-gray-700">
+                                Job Title
+                                <span class="text-red-600">*</span>
+                            </label>
+                            <div class="mt-1 rounded-md shadow-sm">
+                                <input sprig s-trigger="keyup changed delay:300ms" s-replace="#similar-jobs" id="title" name="title" value="{{ title }}" class="form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 {{ entry.hasErrors('title') ? 'border-red-600' }}" autocomplete="off">
+                            </div>
+                            {% if entry.hasErrors('title') %}
+                                <p class="text-sm text-red-600">{{ entry.getFirstError('title') }}</p>
+                            {% endif %}
+                            <div id="similar-jobs">
+                                {% if similarJobs is defined and similarJobs|length %}
+                                    <div class="text-sm text-gray-500 mt-2">
+                                        <p>Similar jobs:</p>
+                                        <ul class="ml-2">
+                                            {% for job in similarJobs %}
+                                                <li class="flex items-center space-x-2">
+                                                    <div class="flex-shrink-0 w-2 h-2 rounded-full {{ job.status == 'live' ? 'bg-green-600' : 'bg-red-600' }}"></div>
+                                                    <a href="{{ job.url }}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                                        {{ job.title }}
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                            {% if similarJobQuery.count() > similarJobs|length %}
+                                                <li>
+                                                    <a sprig s-replace="#similar-jobs" s-val:similar-job-limit="{{ similarJobLimit + 3 }}" href="#" class="text-blue-600 hover:text-blue-800">
+                                                        Show more...
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="sm:col-span-6">
+                            <label for="jobDescription" class="block text-sm font-medium leading-5 text-gray-700">
+                                Job Description
+                            </label>
+                            <div class="mt-1 rounded-md shadow-sm">
+                                <textarea id="jobDescription" name="fields[jobDescription]" rows="2" class="form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">{{ fields.jobDescription ?? '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="sm:col-span-3">
+                            <label for="employmentType" class="block text-sm font-medium leading-5 text-gray-700">
+                                Employment Type
+                            </label>
+                            <div class="mt-1 rounded-md shadow-sm">
+                                <select sprig id="employmentType" name="fields[employmentType]" class="form-select block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                    <option value="remote" {{ employmentType == 'remote' ? 'selected' }}>Remote</option>
+                                    <option value="local" {{ employmentType == 'local' ? 'selected' }}>Local</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3"></div>
+
+                        {% if employmentType == 'local' %}
+                            <div class="sm:col-span-2">
+                                <label for="city" class="block text-sm font-medium leading-5 text-gray-700">
+                                    City
+                                </label>
+                                <div class="mt-1 rounded-md shadow-sm">
+                                    <input id="city" name="fields[city]" value="{{ fields.city ?? '' }}" class="form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label for="state" class="block text-sm font-medium leading-5 text-gray-700">
+                                    State / Province
+                                </label>
+                                <div class="mt-1 rounded-md shadow-sm">
+                                    <input id="state" name="fields[state]" value="{{ fields.state ?? '' }}" class="form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                </div>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label for="country" class="block text-sm font-medium leading-5 text-gray-700">
+                                    Country
+                                </label>
+                                <div class="mt-1 rounded-md shadow-sm">
+                                    <input id="country" name="fields[country]" value="{{ fields.country ?? '' }}" class="form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="sm:col-span-3">
+                            <label for="employmentLength" class="block text-sm font-medium leading-5 text-gray-700">
+                                Employment Length
+                            </label>
+                            <div class="mt-1 rounded-md shadow-sm">
+                                <select sprig id="employmentLength" name="fields[employmentLength]" class="form-select block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                    <option value="contract" {{ employmentLength == 'contract' ? 'selected' }}>Contract</option>
+                                    <option value="permanent" {{ employmentLength == 'permanent' ? 'selected' }}>Permanent</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {% if employmentLength == 'contract' %}
+                            <div class="sm:col-span-3">
+                                <label for="contractLength" class="block text-sm font-medium leading-5 text-gray-700">
+                                    Length of Contract
+                                </label>
+                                <div class="mt-1 rounded-md shadow-sm">
+                                    <input id="contractLength" name="fields[contractLength]" value="{{ fields.contractLength ?? '' }}" class="form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <div class="flex justify-end">
+                        <span class="ml-3 inline-flex rounded-md shadow-sm">
+                            <button sprig s-val:step="2" type="button" class="inline-flex justify-center py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:border-blue-700 focus:shadow-outline-blue active:bg-blue-700 transition duration-150 ease-in-out">
+                                Continue
+                            </button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Step 2 #}
+    <div class="{{ step != 2 ? 'hidden' }}">
+        <div class="mt-5 shadow sm:rounded-md sm:overflow-hidden">
+            <div class="px-4 py-5 bg-white sm:p-6 space-y-6">
+                <div>
+                    <div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            {{ steps[2] }}
+                        </h3>
+                        <p class="mt-1 text-sm leading-5 text-gray-500">
+                            Describe the skills required for this job.
+                        </p>
+                    </div>
+                    <div class="mt-6 grid grid-cols-1 gap-y-2 gap-x-4 sm:grid-cols-6">
+                        {% set defaultRow = {col1: '', col2: ''} %}
+                        {% set skills = fields.skills ?? [defaultRow] %}
+                        {% if addSkill is defined and addSkill %}
+                            {% set skills = skills|merge([defaultRow]) %}
+                        {% elseif removeSkill is defined and removeSkill is numeric %}
+                            {% set skills = skills|filter((val, key) => removeSkill != key) %}
+                        {% endif %}
+
+                        {% for key, skill in skills %}
+                            <div class="sm:col-span-2">
+                                <div class="mt-1 rounded-md shadow-sm">
+                                    <input name="fields[skills][{{ loop.index0 }}][col1]" value="{{ skill.col1 ?? '' }}" placeholder="Skill" class="form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                </div>
+                            </div>
+                            <div class="sm:col-span-4 flex items-center">
+                                <div class="mt-1 rounded-md shadow-sm w-full mr-2">
+                                    <input name="fields[skills][{{ loop.index0 }}][col2]" value="{{ skill.col2 ?? '' }}" placeholder="Description" class="form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                                </div>
+                                {% if skills|length > 1 %}
+                                    <a sprig s-val:remove-skill="{{ loop.index0 }}" href="#" class="text-gray-500 w-5 h-5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="sm:col-span-4">
+                            <span class="mt-1 inline-flex rounded-md shadow-sm">
+                                <button sprig s-val:add-skill="1" type="button" class="py-2 pr-4 pl-2 border border-gray-300 rounded-md text-sm leading-5 font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-50 active:text-gray-800 transition duration-150 ease-in-out flex items-center">
+                                    <svg class="w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                                    </svg>
+                                    Add a skill
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <div class="flex justify-end">
+                        <span class="inline-flex rounded-md shadow-sm">
+                            <button sprig s-val:step="1" type="button" class="py-2 px-4 border border-gray-300 rounded-md text-sm leading-5 font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-50 active:text-gray-800 transition duration-150 ease-in-out">
+                                Back
+                            </button>
+                        </span>
+                        <span class="ml-3 inline-flex rounded-md shadow-sm">
+                            <button sprig s-val:step="3" type="button" class="inline-flex justify-center py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:border-blue-700 focus:shadow-outline-blue active:bg-blue-700 transition duration-150 ease-in-out">
+                                Continue
+                            </button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Step 3 #}
+    <div class="{{ step != 3 ? 'hidden' }}">
+        <div class="mt-5 shadow sm:rounded-md sm:overflow-hidden">
+            <div class="px-4 py-5 bg-white sm:p-6 space-y-6">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h3 class="flex text-xl leading-6 font-medium text-gray-900">
+                            {{ title }}
+                        </h3>
+                        <span class="bg-teal-600 text-white rounded uppercase text-xs font-bold px-2 py-1">
+                            {{ employmentType }}
+                        </span>
+                        <span class="bg-yellow-600 text-white rounded uppercase text-xs font-bold px-2 py-1">
+                            {{ employmentLength }}
+                        </span>
+                    </div>
+                    <p class="mt-2 text-sm leading-5 text-gray-500 italic">
+                        {% if employmentType == 'local' %}
+                            {{ fields.city ?? '' }}, {{ fields.state ?? '' }}, {{ fields.country ?? '' }}
+                        {% endif %}
+                        {% if employmentLength == 'contract' %}
+                            {{ fields.contractLength ?? '' }}
+                        {% endif %}
+                    </p>
+                    <p class="mt-4 text-sm leading-5 text-gray-700">
+                        {{ fields.jobDescription ?? '' }}
+                    </p>
+                    {% for skill in skills %}
+                        <p class="mt-4 text-sm leading-5 text-gray-700">
+                            {{ skill.col1 }}
+                            <br>
+                            {{ skill.col2 }}
+                        </p>
+                    {% endfor %}
+                </div>
+                <div class="mt-8 border-t border-gray-100 pt-5">
+                    <div class="flex justify-end">
+                        <span class="inline-flex rounded-md shadow-sm">
+                            <button sprig s-val:step="2" type="button" class="py-2 px-4 border border-gray-300 rounded-md text-sm leading-5 font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-50 active:text-gray-800 transition duration-150 ease-in-out">
+                                Back
+                            </button>
+                        </span>
+                        <span class="ml-3 inline-flex rounded-md shadow-sm">
+                            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-red-600 hover:bg-red-500 focus:outline-none focus:border-red-700 focus:shadow-outline-red active:bg-red-700 transition duration-150 ease-in-out">
+                                Save & Submit
+                            </button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,11 @@
+{% extends 'sprig/components/_layout' %}
+
+{% set title = 'Sprigboard' %}
+{% set subtitle = 'The power of Sprig in a board – It’s just Twig™' %}
+
+
+{% block content %}
+
+    {{ sprig('sprig/components/board/_components/board') }}
+
+{% endblock %}

@@ -1,0 +1,20 @@
+{# If the form action was a success. #}
+{% if success is defined and success %}
+
+    {% include 'sprig/components/form/_components/partials/success' %}
+
+{% else %}
+
+    {% set steps = {
+        1: 'Job Description',
+        2: 'Required Skills',
+        3: 'Preview',
+    } %}
+
+    {% set step = step is defined and steps[step] is defined ? step : 1 %}
+    {% set step = success is defined and not success ? 1 : step %}
+
+    {% include 'sprig/components/form/_components/partials/steps' %}
+    {% include 'sprig/components/form/_components/partials/form' %}
+
+{% endif %}

@@ -1,0 +1,42 @@
+{# Set to a new entry if none came back from an action request #}
+{% set entry = entry ?? create('craft\\elements\\Entry') %}
+
+{% set sectionId = 8 %}
+
+{% set title = title ?? '' %}
+
+<form sprig s-action="entries/save-entry" s-method="post">
+    {{ hiddenInput('sectionId', sectionId) }}
+
+    <div class="mt-5 shadow sm:rounded-md sm:overflow-hidden">
+        <div class="px-4 py-5 bg-white sm:p-6 space-y-6">
+            <div>
+                <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div class="sm:col-span-6">
+                        <label for="title" class="block text-sm font-medium leading-5 text-gray-700">
+                            Job Title
+                            <span class="text-red-600">*</span>
+                        </label>
+                        <div class="mt-1 rounded-md shadow-sm">
+                            <input sprig s-trigger="keyup changed delay:300ms" s-replace="#similar-jobs" id="title" name="title" value="{{ title }}" class="form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 {{ entry.hasErrors('title') ? 'border-red-600' }}" autocomplete="off">
+                        </div>
+                        {% if entry.hasErrors('title') %}
+                            <p class="text-sm text-red-600">
+                                {{ entry.getFirstError('title') }}
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mt-8 border-t border-gray-100 pt-5">
+                    <div class="flex justify-end">
+                        <span class="ml-3 inline-flex rounded-md shadow-sm">
+                            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-red-600 hover:bg-red-500 focus:outline-none focus:border-red-700 focus:shadow-outline-red active:bg-red-700 transition duration-150 ease-in-out">
+                                Save & Submit
+                            </button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

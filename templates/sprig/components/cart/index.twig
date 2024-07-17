@@ -1,0 +1,40 @@
+{% extends 'sprig/components/_layout' %}
+
+{% set title = 'Sprigcart' %}
+{% set subtitle = 'The power of Sprig in a cart – It’s just Twig™' %}
+
+
+{% block content %}
+
+    <div class="flex overflow-hidden">
+        <div class="flex-1 overflow-auto focus:outline-none" tabindex="0">
+            <main class="flex-1 relative pb-8 z-0 overflow-y-auto">
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                    <div class="space-y-2">
+                        <h2 class="text-lg leading-6 font-medium text-cool-gray-900">
+                            Product Suggestions
+                        </h2>
+                        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                            {% for i in 1..3 %}
+                                <div class="bg-white overflow-hidden shadow rounded-lg">
+
+                                    {{ sprig('sprig/components/cart/_components/product') }}
+
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <h2 class="mt-10 text-lg leading-6 font-medium text-cool-gray-900">
+                            Shopping Cart
+                        </h2>
+
+                        {{ sprig('sprig/components/cart/_components/cart', {}, {id: 'cart'}) }}
+
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+{% endblock %}
